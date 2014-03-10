@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merger>
+
+    <dataSet config="main" >
+        <source path="/Users/charroch/github/gradle-android-jacoco-plugin/example/src/androidTest/res" />
+        <source path="/Users/charroch/github/gradle-android-jacoco-plugin/example/build/res/rs/test/debug" />
+        <source path="/Users/charroch/github/gradle-android-jacoco-plugin/example/build/res/generated/test/debug" />
+    </dataSet>
+
+</merger>

@@ -1,0 +1,25 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.9.+'
+        classpath project(':plugin')
+    }
+}
+
+apply plugin: 'android'
+apply plugin: 'jacoco-android'
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+    androidTestCompile 'com.jayway.android.robotium:robotium-solo:4.3.1'
+}
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion "19.0.3"
+}
