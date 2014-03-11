@@ -29,10 +29,7 @@ class JaCoCoPlugin implements Plugin<Project> {
         }
 
         project.dependencies {
-//            debugCompile 'com.jakewharton.hugo:hugo-runtime:1.0.2-SNAPSHOT'
-//            // TODO this should come transitively
-//            debugCompile 'org.aspectj:aspectjrt:1.7.4'
-//            compile 'com.jakewharton.hugo:hugo-annotations:1.0.2-SNAPSHOT'
+            debugCompile 'org.jacoco:org.jacoco.agent:0.6.6-SNAPSHOT'
         }
 
         variants.all { variant ->
@@ -43,12 +40,12 @@ class JaCoCoPlugin implements Plugin<Project> {
 
             JavaCompile javaCompile = variant.javaCompile
             javaCompile.doLast {
-                File original = new File(javaCompile.destinationDir.getParent(), 'original-classe')
+                File original = new File(javaCompile.destinationDir.getParent(), 'original-classes')
 
-                copy {
-                    from javaCompile.destinationDir
-                    into original
-                }
+//                project.copy {
+//                    from javaCompile.destinationDir
+//                    into original
+//                }
 
                 println 'jacoco against ' + javaCompile.destinationDir
                 ant.taskdef(name: 'jacoco', classname: 'org.jacoco.ant.InstrumentTask', classpath: project.configurations.jacoco.asPath)

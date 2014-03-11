@@ -5,10 +5,22 @@ buildscript {
 }
 
 apply plugin: 'groovy'
-apply plugin: 'nexus'
+apply plugin: 'maven'
 
 dependencies {
   compile gradleApi()
   compile localGroovy()
   compile 'com.android.tools.build:gradle:0.9.+'
+}
+
+group='com.novoda'   //Group name makes easier to manager the packages.
+version='0.1.1-SNAPSHOT'
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: uri('../repo'))
+            pom.artifactId = 'gradle-android-jacoco-plugin'
+        }
+    }
 }
