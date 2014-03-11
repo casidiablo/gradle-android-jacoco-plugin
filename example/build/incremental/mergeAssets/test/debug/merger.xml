@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<merger>
-
-    <dataSet config="main" >
-        <source path="/Users/charroch/github/gradle-android-jacoco-plugin/example/src/androidTest/assets" />
-    </dataSet>
-
-</merger>
