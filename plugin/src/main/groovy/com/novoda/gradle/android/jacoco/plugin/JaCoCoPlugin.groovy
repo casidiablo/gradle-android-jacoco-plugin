@@ -29,7 +29,8 @@ class JaCoCoPlugin implements Plugin<Project> {
         }
 
         project.dependencies {
-            debugCompile 'org.jacoco:org.jacoco.agent:0.6.6-SNAPSHOT'
+            compile 'org.jacoco:org.jacoco.agent:0.6.2.201302030002'
+            compile project.files("/tmp/jacocoagent.jar")
         }
 
         variants.all { variant ->
@@ -42,10 +43,10 @@ class JaCoCoPlugin implements Plugin<Project> {
             javaCompile.doLast {
                 File original = new File(javaCompile.destinationDir.getParent(), 'original-classes')
 
-//                project.copy {
-//                    from javaCompile.destinationDir
-//                    into original
-//                }
+                project.copy {
+                    from javaCompile.destinationDir
+                    into original
+                }
 
                 println 'jacoco against ' + javaCompile.destinationDir
                 ant.taskdef(name: 'jacoco', classname: 'org.jacoco.ant.InstrumentTask', classpath: project.configurations.jacoco.asPath)

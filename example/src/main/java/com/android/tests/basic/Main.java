@@ -11,5 +11,10 @@ public class Main extends Activity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+        sayHello();
+    }
+
+    public void sayHello() {
+        getActionBar();
     }
 }

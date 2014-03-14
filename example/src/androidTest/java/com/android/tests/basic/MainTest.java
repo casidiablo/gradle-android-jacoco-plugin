@@ -2,9 +2,11 @@ package com.android.tests.basic;
 
 import android.test.ActivityInstrumentationTestCase2;
 import android.test.suitebuilder.annotation.MediumTest;
+import android.util.Log;
 import android.widget.TextView;
 
 import com.jayway.android.robotium.solo.Solo;
+
 
 public class MainTest extends ActivityInstrumentationTestCase2<Main> {
 
@@ -27,11 +29,17 @@ public class MainTest extends ActivityInstrumentationTestCase2<Main> {
         assertNotNull(a);
         mTextView = (TextView) a.findViewById(R.id.text);
         solo = new Solo(getInstrumentation(), getActivity());
+
     }
 
     @Override
     public void tearDown() throws Exception {
         solo.finishOpenedActivities();
+////        Log.i("TEST", Agent.getInstance().getExecutionData(false).length + " <> ");
+//
+////        Agent.getInstance().dump(false);
+//        Log.i("TEST", new String(Agent.getInstance().getExecutionData(false)));
+//        Agent.getInstance().shutdown();
     }
 
     /**
