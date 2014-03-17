@@ -1,4 +1,5 @@
 import com.android.build.gradle.AppPlugin
+import com.android.build.gradle.LibraryPlugin
 
 buildscript {
     repositories {
@@ -43,10 +44,10 @@ android {
 }
 
 task extractApi(type: Copy) {
-    from { // use of closure defers evaluation until execution time
-        configurations.jacoco.collect { zipTree(it) }
+    from(configurations.jacoco.collect { zipTree(it) }) {
+        include 'jacocoagent.jar'
     }
-    into "$buildDir/api/"
+    into "$buildDir/jacocoagent/"
 }
 
 class InstrumentTask extends DefaultTask {
@@ -55,21 +56,20 @@ class InstrumentTask extends DefaultTask {
 
     def File classDir
 
-   // @OutputDirectory
+    // @OutputDirectory
     def File destinationDir
 
-    @Input
+    //@Input
     def Set<String> includes = ['**/*.class']
 
-    @Input
+    //@Input
     def Set<String> excludes = ['**/R.class', "**/BuildConfig.class", "android/**/*.class"]
 
     @TaskAction
-    void execute(IncrementalTaskInputs inputs) {
-
+    def instrument() {
         ant.taskdef(name: 'instrument', classname: 'org.jacoco.ant.InstrumentTask', classpath: project.configurations.jacoco.asPath)
         ant.instrument(destdir: destinationDir) {
-            fileset(dir: classDir,  includes: '**/*.class', excludes: excludes)
+            fileset(dir: classDir, includes: '**/*.class', excludes: excludes)
         }
     }
 }
@@ -97,21 +97,14 @@ task check3 << {
 
     project.android.applicationVariants.all { variant ->
         if (variant.getTestVariant()) {
-            println variant.getTestVariant().getConnectedInstrumentTest()
-        }
-    }
-
-    tasks.withType(com.android.build.gradle.internal.tasks.AndroidTestTask) {
-        def v = it
-        if (v.variant != null) {
-            def javaCompile = v.variant.getTestedVariantData().javaCompileTask
-            javaCompile.doLast {
-                println 'jacoco against ' + javaCompile.destinationDir
-                ant.taskdef(name: 'jacoco', classname: 'org.jacoco.ant.InstrumentTask', classpath: configurations.jacoco.asPath)
-                ant.jacoco(destdir: javaCompile.destinationDir) {
-                    fileset(dir: javaCompile.destinationDir, includes: '**/*.class')
-                }
-            }
+            Configuration configuration = variant.getTestVariant().getVariantData().getVariantDependency().getPackageConfiguration();
+            configuration.dependencies +  project.files("/tmp/jacocoagent.jar")
+            configuration.dependencies.whenObjectAdded{
+                println it;
+            }//add(project.files("/tmp/jacocoagent.jar"))
+            //addLocalJars(project.files("/tmp/jacocoagent.jar").files);
+            //getPackageConfiguration()
+            // variant.getMainArtifact().getDependencies();
         }
     }
 }
@@ -121,12 +114,8 @@ task instrument2(type: Exec) {
     commandLine 'adb', 'shell', 'am', 'instrument', '-e', 'coverage', 'true', '-w', 'com.android.tests.basic.test/com.android.tests.basic.InstrumentationRunner'
 }
 
-import com.android.build.gradle.AppPlugin
-import com.android.build.gradle.LibraryPlugin
-
-import org.gradle.api.Plugin
-import org.gradle.api.Project
-import org.gradle.api.tasks.compile.JavaCompile
+import com.android.build.gradle.tasks.Dex
+import org.apache.tools.ant.filters.ReplaceTokens
 
 class JaCoCoPluginExtension {
     def String version = '0.6.6-SNAPSHOT'
@@ -159,31 +148,40 @@ class JaCoCoPlugin implements Plugin<Project> {
         }
 
         project.dependencies {
-            androidTestCompile 'org.jacoco:org.jacoco.agent:0.6.6-SNAPSHOT'
-            androidTestCompile project.files("/tmp/jacocoagent.jar")
+            compile 'org.jacoco:org.jacoco.agent:0.6.6-SNAPSHOT'
+            compile project.files("/tmp/jacocoagent.jar")
         }
 
         variants.all { variant ->
+
             if (variant.getTestVariant()) {
                 def testVariant = variant.getTestVariant();
                 Copy copy = testVariant.getProcessJavaResources()
                 DefaultTask testTask = variant.getTestVariant().getConnectedInstrumentTest()
 
                 JavaCompile javaCompile = variant.javaCompile
-                File original = new File(javaCompile.destinationDir.getParent(), javaCompile.destinationDir.getName() + '-original')
+                InstrumentTask instrument =
+                        project.task("instrumentJaCoCo${variant.getVariantData().getVariantConfiguration().fullName.capitalize()}",
+                                type: InstrumentTask) {
+                            classDir = javaCompile.destinationDir
+                            destinationDir = project.file("${project.buildDir}/instrumented-classes/${variant.getVariantData().getVariantConfiguration().dirName}/")
+                        }
 
-                InstrumentTask instrument = project.task('jacocoInstrumentDebugTask', type: InstrumentTask)
 
+              //  variant.getVariantData().getVariantDependency().addLocalJars(project.files("/tmp/jacocoagent.jar").files);
+
+                Configuration configuration = variant.getTestVariant().getVariantData().getVariantDependency().getPackageConfiguration();
+                configuration.dependencies + project.files("/tmp/jacocoagent.jar")
+
+                configuration.dependencies.each { println "hello" + it }
+
+                //project.dependencies.androidTestCompile.each { println it }
+                Dex dex = variant.getApkVariantData().dexTask
+                dex.conventionMapping.inputFiles = { project.files(instrument.destinationDir).files }
+                dex.dependsOn(instrument)
+                println dex.libraries
+              //  dex.conventionMapping.libraries + "$buildDir/jacocoagent/jacocoagent.jar"
                 instrument.mustRunAfter javaCompile
-                javaCompile.doLast {
-                    project.copy {
-                        from javaCompile.destinationDir
-                        into original
-                    }
-                    instrument.classDir = original
-                    instrument.destinationDir = javaCompile.destinationDir
-                }
-                testTask.dependsOn(instrument)
             }
         }
     }
