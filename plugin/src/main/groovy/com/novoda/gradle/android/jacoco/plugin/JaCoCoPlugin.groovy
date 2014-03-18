@@ -58,18 +58,19 @@ class JaCoCoPlugin implements Plugin<Project> {
 
                 Dex dex = variant.getApkVariantData().dexTask
                 dex.conventionMapping.inputFiles = {
-                    def files = project.files(instrument.destinationDir) + project.files("/tmp/jacocoagent.jar")
+                    def files = project.files(instrument.destinationDir) + project.files("$project.buildDir/jacocoagent/jacocoagent.jar")
                     files.files
                 }
 
                 dex.dependsOn(instrument, extractAgent)
                 instrument.mustRunAfter javaCompile
 
-
-
                 def inst = project.task('instrument', type:Exec) {
                     com.android.build.gradle.BasePlugin plugin = project.plugins.findPlugin('android')
-                    commandLine plugin.extension.adbExe, 'shell', 'am', 'instrument', '-e', 'coverage', 'true', '-w', 'com.android.tests.basic.test/com.android.tests.basic.InstrumentationRunner'
+                    def pkg = variant.getTestVariant().getVariantData().getPackageName()
+                    def runner = variant.getTestVariant().getVariantData().getVariantConfiguration().getInstrumentationRunner()
+                    def asstring = pkg + '/' + runner
+                    commandLine plugin.extension.adbExe, 'shell', 'am', 'instrument', '-e', 'coverage', 'true', '-w', asstring
                 }
 
                 def pullingCoverageFile = project.task('pullCoverage', type:Exec) {
@@ -79,11 +80,9 @@ class JaCoCoPlugin implements Plugin<Project> {
                 }
 
                 inst.dependsOn variant.getApkVariantData().installTask, variant.getTestVariant().getApkVariantData().installTask
-
                 pullingCoverageFile.dependsOn inst
 
                 pullingCoverageFile.doLast {
-
                     ant.taskdef(name: 'jacocoReport', classname: 'org.jacoco.ant.ReportTask', classpath: project.configurations.jacoco.asPath)
                     ant.jacocoReport {
                         executiondata {
@@ -94,16 +93,17 @@ class JaCoCoPlugin implements Plugin<Project> {
                                 fileset(dir: javaCompile.destinationDir)
                             }
                             sourcefiles {
-                                fileset(dir:'/Users/charroch/github/gradle-android-jacoco-plugin/example/src/main/java')
-//                                        project.files(
-//                                                variant.getVariantData()
-//                                                        .getVariantConfiguration()
-//                                                        .getDefaultSourceSet().getJavaDirectories()).files)
+                                project.files(
+                                        variant.getVariantData().getVariantConfiguration().getDefaultSourceSet()
+                                                .getJavaDirectories())
                             }
                         }
                         html(destdir: "$project.buildDir/jacocoreport/")
                     }
+                    getLogger().lifecycle("Report saved at: $project.buildDir/jacocoreport/index.html")
                 }
+
+                project.task('coverage').dependsOn pullingCoverageFile
             }
         }
     }
