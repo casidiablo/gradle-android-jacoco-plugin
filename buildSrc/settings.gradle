@@ -1,0 +1,2 @@
+include ':jacoco'
+project(':jacoco').projectDir = new File('../plugin')

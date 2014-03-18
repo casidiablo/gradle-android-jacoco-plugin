@@ -25,7 +25,8 @@ repositories {
 }
 
 apply plugin: 'android'
-apply plugin: JaCoCoPlugin
+apply plugin: 'jacoco-android'
+
 
 repositories {
     mavenCentral()
@@ -43,147 +44,50 @@ android {
     }
 }
 
-task extractApi(type: Copy) {
-    from(configurations.jacoco.collect { zipTree(it) }) {
-        include 'jacocoagent.jar'
-    }
-    into "$buildDir/jacocoagent/"
-}
+//task instrument(type:Exec) {
+//    com.android.build.gradle.BasePlugin plugin = project.plugins.findPlugin('android')
+//    commandLine plugin.extension.adbExe, 'shell', 'am', 'instrument', '-e', 'coverage', 'true', '-w', 'com.android.tests.basic.test/com.android.tests.basic.InstrumentationRunner'
+//}
 
-class InstrumentTask extends DefaultTask {
-
-    String description = 'Offline instrumentation of classes for JaCoCo'
-
-    def File classDir
-
-    // @OutputDirectory
-    def File destinationDir
-
-    //@Input
-    def Set<String> includes = ['**/*.class']
-
-    //@Input
-    def Set<String> excludes = ['**/R.class', "**/BuildConfig.class", "android/**/*.class"]
-
-    @TaskAction
-    def instrument() {
-        ant.taskdef(name: 'instrument', classname: 'org.jacoco.ant.InstrumentTask', classpath: project.configurations.jacoco.asPath)
-        ant.instrument(destdir: destinationDir) {
-            fileset(dir: classDir, includes: '**/*.class', excludes: excludes)
-        }
-    }
-}
-
-task hello << {
-    ant.taskdef(name: 'jacocoReport', classname: 'org.jacoco.ant.ReportTask', classpath: project.configurations.jacoco.asPath)
-    ant.jacocoReport {
-        executiondata {
-            fileset(dir: '/home/acsia/dev/gradle/gradle-android-jacoco-plugin/', includes: '**/*.ec')
-        }
-        structure(name: 'Example Project') {
-            classfiles {
-                fileset(dir: '/home/acsia/dev/gradle/gradle-android-jacoco-plugin/example/build/classes/original-classes')
-            }
-            sourcefiles {
-                fileset(dir: '/home/acsia/dev/gradle/gradle-android-jacoco-plugin/example/src/main/java')
-            }
-        }
-        html(destdir: '/tmp/report-Jacoco')
-    }
-}
-
-task check3 << {
-    configurations.getAsMap().each { println it.key + " " + it.value }
-
-    project.android.applicationVariants.all { variant ->
-        if (variant.getTestVariant()) {
-            Configuration configuration = variant.getTestVariant().getVariantData().getVariantDependency().getPackageConfiguration();
-            configuration.dependencies +  project.files("/tmp/jacocoagent.jar")
-            configuration.dependencies.whenObjectAdded{
-                println it;
-            }//add(project.files("/tmp/jacocoagent.jar"))
-            //addLocalJars(project.files("/tmp/jacocoagent.jar").files);
-            //getPackageConfiguration()
-            // variant.getMainArtifact().getDependencies();
-        }
-    }
-}
-
-
-task instrument2(type: Exec) {
-    commandLine 'adb', 'shell', 'am', 'instrument', '-e', 'coverage', 'true', '-w', 'com.android.tests.basic.test/com.android.tests.basic.InstrumentationRunner'
-}
-
-import com.android.build.gradle.tasks.Dex
-import org.apache.tools.ant.filters.ReplaceTokens
-
-class JaCoCoPluginExtension {
-    def String version = '0.6.6-SNAPSHOT'
-    // do we need this?
-    def String onDeviceDestFile = '/sdcard/jacoco-ext'
-    //def String sessionId =
-}
-
-class JaCoCoPlugin implements Plugin<Project> {
-
-    void apply(Project project) {
-        def hasApp = project.plugins.hasPlugin(AppPlugin)
-        def hasLib = project.plugins.hasPlugin(LibraryPlugin)
-        if (!hasApp && !hasLib) {
-            throw new IllegalStateException("'android' or 'android-library' plugin required.")
-        }
-
-        project.extensions.create("jacoco", JaCoCoPluginExtension)
-        final def variants
-        if (hasApp) {
-            variants = project.android.applicationVariants
-        } else {
-            variants = project.android.libraryVariants
-        }
-
-        project.configurations.create("jacoco")
-        project.dependencies {
-            jacoco 'org.jacoco:org.jacoco.ant:' + project.jacoco.version
-            jacoco 'org.jacoco:org.jacoco.agent:' + project.jacoco.version
-        }
-
-        project.dependencies {
-            compile 'org.jacoco:org.jacoco.agent:0.6.6-SNAPSHOT'
-            compile project.files("/tmp/jacocoagent.jar")
-        }
-
-        variants.all { variant ->
-
-            if (variant.getTestVariant()) {
-                def testVariant = variant.getTestVariant();
-                Copy copy = testVariant.getProcessJavaResources()
-                DefaultTask testTask = variant.getTestVariant().getConnectedInstrumentTest()
-
-                JavaCompile javaCompile = variant.javaCompile
-                InstrumentTask instrument =
-                        project.task("instrumentJaCoCo${variant.getVariantData().getVariantConfiguration().fullName.capitalize()}",
-                                type: InstrumentTask) {
-                            classDir = javaCompile.destinationDir
-                            destinationDir = project.file("${project.buildDir}/instrumented-classes/${variant.getVariantData().getVariantConfiguration().dirName}/")
-                        }
-
-
-              //  variant.getVariantData().getVariantDependency().addLocalJars(project.files("/tmp/jacocoagent.jar").files);
-
-                Configuration configuration = variant.getTestVariant().getVariantData().getVariantDependency().getPackageConfiguration();
-                configuration.dependencies + project.files("/tmp/jacocoagent.jar")
-
-                configuration.dependencies.each { println "hello" + it }
-
-                //project.dependencies.androidTestCompile.each { println it }
-                Dex dex = variant.getApkVariantData().dexTask
-                dex.conventionMapping.inputFiles = { project.files(instrument.destinationDir).files }
-                dex.dependsOn(instrument)
-                println dex.libraries
-              //  dex.conventionMapping.libraries + "$buildDir/jacocoagent/jacocoagent.jar"
-                instrument.mustRunAfter javaCompile
-            }
-        }
-    }
-}
-
+//
+//
+//
+//task hello << {
+//    ant.taskdef(name: 'jacocoReport', classname: 'org.jacoco.ant.ReportTask', classpath: project.configurations.jacoco.asPath)
+//    ant.jacocoReport {
+//        executiondata {
+//            fileset(dir: '/home/acsia/dev/gradle/gradle-android-jacoco-plugin/', includes: '**/*.ec')
+//        }
+//        structure(name: 'Example Project') {
+//            classfiles {
+//                fileset(dir: '/home/acsia/dev/gradle/gradle-android-jacoco-plugin/example/build/classes/original-classes')
+//            }
+//            sourcefiles {
+//                fileset(dir: '/home/acsia/dev/gradle/gradle-android-jacoco-plugin/example/src/main/java')
+//            }
+//        }
+//        html(destdir: '/tmp/report-Jacoco')
+//    }
+//}
+//
+//task check3 << {
+//    configurations.getAsMap().each { println it.key + " " + it.value }
+//
+//    project.android.applicationVariants.all { variant ->
+//        if (variant.getTestVariant()) {
+//            Configuration configuration = variant.getTestVariant().getVariantData().getVariantDependency().getPackageConfiguration();
+//            configuration.dependencies +  project.files("/tmp/jacocoagent.jar")
+//            configuration.dependencies.whenObjectAdded{
+//                println it;
+//            }//add(project.files("/tmp/jacocoagent.jar"))
+//            //addLocalJars(project.files("/tmp/jacocoagent.jar").files);
+//            //getPackageConfiguration()
+//            // variant.getMainArtifact().getDependencies();
+//        }
+//    }
+//}
+//
+//
+//task instrument2(type: Exec) {
+//    commandLine 'adb', 'shell', 'am', 'instrument', '-e', 'coverage', 'true', '-w', 'com.android.tests.basic.test/com.android.tests.basic.InstrumentationRunner'
+//}
