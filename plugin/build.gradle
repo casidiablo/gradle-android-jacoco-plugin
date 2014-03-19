@@ -4,7 +4,7 @@ apply plugin: 'maven'
 repositories {
     mavenCentral()
     maven {
-        url "https://oss.sonatype.org/content/repositories/snapshots"
+        url "http://oss.sonatype.org/content/repositories/snapshots"
     }
 }
 

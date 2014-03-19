@@ -1,12 +1,8 @@
-import com.android.build.gradle.AppPlugin
-import com.android.build.gradle.LibraryPlugin
-
 buildscript {
     repositories {
         mavenCentral()
-        mavenLocal()
         maven {
-            url '../repo'
+            url "https://oss.sonatype.org/content/repositories/snapshots/"
         }
     }
     dependencies {
@@ -14,80 +10,69 @@ buildscript {
     }
 }
 
+
+import com.android.build.gradle.AppPlugin
+import com.android.build.gradle.LibraryPlugin
+
 repositories {
     mavenCentral()
     maven {
         url "https://oss.sonatype.org/content/repositories/snapshots"
     }
-    maven {
-        url "https://github.com/novoda/public-mvn-repo/raw/master/releases"
-    }
 }
 
 apply plugin: 'android'
-apply plugin: 'jacoco-android'
-
-
-repositories {
-    mavenCentral()
-}
+apply plugin: 'android-jacoco'
 
 dependencies {
     androidTestCompile 'com.jayway.android.robotium:robotium-solo:4.3.1'
+    jacoco 'org.jacoco:org.jacoco.ant:0.6.6-SNAPSHOT'
+}
+
+task check2 << {
+    android.applicationVariants.each { variant ->
+        if (variant.getTestVariant()) {
+//            println variant.getTestVariant().getConnectedInstrumentTest().runnerOption = new RunnerOption
+        }
+    }
 }
 
 android {
     compileSdkVersion 19
     buildToolsVersion "19.0.3"
+
     defaultConfig {
         testInstrumentationRunner "com.android.tests.basic.InstrumentationRunner"
+        jacoco {
+            version = '0.7.21-SNAPSHOT'
+        }
     }
+
+    buildTypes {
+        debug {}
+        release {}
+        QA {}
+    }
+
+    productFlavors {
+
+        flavorGroups "pricing", "releaseType"
+
+        beta {
+            flavorGroup "releaseType"
+        }
+
+        normal {
+            flavorGroup "releaseType"
+        }
+
+        free {
+            flavorGroup "pricing"
+        }
+
+        paid {
+            flavorGroup "pricing"
+        }
+    }
+
 }
-
-//task instrument(type:Exec) {
-//    com.android.build.gradle.BasePlugin plugin = project.plugins.findPlugin('android')
-//    commandLine plugin.extension.adbExe, 'shell', 'am', 'instrument', '-e', 'coverage', 'true', '-w', 'com.android.tests.basic.test/com.android.tests.basic.InstrumentationRunner'
-//}
-
-//
-//
-//
-//task hello << {
-//    ant.taskdef(name: 'jacocoReport', classname: 'org.jacoco.ant.ReportTask', classpath: project.configurations.jacoco.asPath)
-//    ant.jacocoReport {
-//        executiondata {
-//            fileset(dir: '/home/acsia/dev/gradle/gradle-android-jacoco-plugin/', includes: '**/*.ec')
-//        }
-//        structure(name: 'Example Project') {
-//            classfiles {
-//                fileset(dir: '/home/acsia/dev/gradle/gradle-android-jacoco-plugin/example/build/classes/original-classes')
-//            }
-//            sourcefiles {
-//                fileset(dir: '/home/acsia/dev/gradle/gradle-android-jacoco-plugin/example/src/main/java')
-//            }
-//        }
-//        html(destdir: '/tmp/report-Jacoco')
-//    }
-//}
-//
-//task check3 << {
-//    configurations.getAsMap().each { println it.key + " " + it.value }
-//
-//    project.android.applicationVariants.all { variant ->
-//        if (variant.getTestVariant()) {
-//            Configuration configuration = variant.getTestVariant().getVariantData().getVariantDependency().getPackageConfiguration();
-//            configuration.dependencies +  project.files("/tmp/jacocoagent.jar")
-//            configuration.dependencies.whenObjectAdded{
-//                println it;
-//            }//add(project.files("/tmp/jacocoagent.jar"))
-//            //addLocalJars(project.files("/tmp/jacocoagent.jar").files);
-//            //getPackageConfiguration()
-//            // variant.getMainArtifact().getDependencies();
-//        }
-//    }
-//}
-//
-//
-//task instrument2(type: Exec) {
-//    commandLine 'adb', 'shell', 'am', 'instrument', '-e', 'coverage', 'true', '-w', 'com.android.tests.basic.test/com.android.tests.basic.InstrumentationRunner'
-//}

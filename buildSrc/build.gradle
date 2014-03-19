@@ -1,18 +1,3 @@
-
-
-buildscript {
-    repositories {
-        mavenCentral()
-        mavenLocal()
-        maven {
-            url '../repo'
-        }
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:0.9.+'
-    }
-}
-
 repositories {
     mavenCentral()
     maven {
