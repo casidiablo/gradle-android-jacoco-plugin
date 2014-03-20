@@ -1,6 +1,7 @@
 package com.novoda.gradle.android.jacoco.plugin
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.LibraryPlugin
+import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
 import com.android.build.gradle.tasks.Dex
 import com.novoda.gradle.android.jacoco.plugin.tasks.InstrumentTask
 import org.gradle.api.Plugin
@@ -47,73 +48,91 @@ class JaCoCoPlugin implements Plugin<Project> {
         }
 
 
-        variants.all { variant ->
-            if (variant.getTestVariant()) {
+        variants.all { variant2 ->
+            if (variant2.getTestVariant()) {
 
-                JavaCompile javaCompile = variant.javaCompile
-                String variantName = variant.getVariantData().getVariantConfiguration().fullName.capitalize()
+                JavaCompile javaCompile = variant2.javaCompile
+                String variantName = variant2.getVariantData().getVariantConfiguration().fullName.capitalize()
                 InstrumentTask instrument =
-                        project.task("instrument${variant.getVariantData().getVariantConfiguration().fullName.capitalize()}",
+                        project.task("instrument${variant2.getVariantData().getVariantConfiguration().fullName.capitalize()}",
                                 type: InstrumentTask) {
                             classDir = javaCompile.destinationDir
-                            destinationDir = project.file("${project.buildDir}/instrumented-classes/${variant.getVariantData().getVariantConfiguration().dirName}/")
+                            destinationDir = project.file("${project.buildDir}/instrumented-classes/${variant2.getVariantData().getVariantConfiguration().dirName}/")
                         }
 
-                def extractAgent = project.task("${variantName}extractJacocoAgent", type: Copy) {
-                    from(project.configurations.jacoco.collect { project.zipTree(it) }) {
-                        include 'jacocoagent.jar'
-                    }
-                    into "$project.buildDir/jacocoagent/"
+                DeviceProviderInstrumentTestTask task = variant2.getTestVariant().getConnectedInstrumentTest()
+                def connectedTestRerpo = project.task("connectedAndroidTest${variantName}Coverage", type: DeviceProviderInstrumentTestTask) {
+
+                    plugin = task.plugin
+                    variant = task.variant
+                     testApp = task.testApp
+                     testedApp = task.testedApp
+                     reportsDir = task.reportsDir
+                     resultsDir = task.resultsDir
+                     flavorName = task.flavorName
+                     deviceProvider = task.deviceProvider
                 }
 
-                Dex dex = variant.getApkVariantData().dexTask
-                dex.conventionMapping.inputFiles = {
-                    def files = project.files(instrument.destinationDir) + project.files("$project.buildDir/jacocoagent/jacocoagent.jar")
-                    files.files
-                }
+                connectedTestRerpo.dependsOn task.getTaskDependencies()
 
-                dex.dependsOn(instrument, extractAgent)
-                instrument.mustRunAfter javaCompile
 
-                def inst = project.task("${variantName}instrument", type:Exec) {
-                    com.android.build.gradle.BasePlugin plugin = project.plugins.findPlugin('android')
-                    def pkg = variant.getTestVariant().getVariantData().getPackageName()
-                    def runner = variant.getTestVariant().getVariantData().getVariantConfiguration().getInstrumentationRunner()
-                    def asstring = pkg + '/' + runner
-                    commandLine plugin.extension.adbExe, 'shell', 'am', 'instrument', '-e', 'coverage', 'true', '-w', asstring
-                }
+//
+//                def extractAgent = project.task("${variantName}extractJacocoAgent", type: Copy) {
+//                    from(project.configurations.jacoco.collect { project.zipTree(it) }) {
+//                        include 'jacocoagent.jar'
+//                    }
+//                    into "$project.buildDir/jacocoagent/"
+//                }
 
-                def pullingCoverageFile = project.task("${variantName}pullCoverage", type:Exec) {
-                    def f = variant.getVariantData().getPackageName()
-                    com.android.build.gradle.BasePlugin plugin = project.plugins.findPlugin('android')
-                    commandLine plugin.extension.adbExe, 'pull', "/data/data/$f/files/coverage.ec","$project.buildDir/jacocoreport/coverage.ec"
-                }
-
-                inst.dependsOn variant.getApkVariantData().installTask, variant.getTestVariant().getApkVariantData().installTask
-                pullingCoverageFile.dependsOn inst
-
-                pullingCoverageFile.doLast {
-                    ant.taskdef(name: "${variantName}jacocoReport", classname: 'org.jacoco.ant.ReportTask', classpath: project.configurations.jacoco.asPath)
-                    ant.jacocoReport {
-                        executiondata {
-                            fileset(dir: "$project.buildDir/jacocoreport/", includes: '**/*.ec')
-                        }
-                        structure(name: variant.getVariantData().getName()) {
-                            classfiles {
-                                fileset(dir: javaCompile.destinationDir)
-                            }
-                            sourcefiles {
-                                project.files(
-                                        variant.getVariantData().getVariantConfiguration().getDefaultSourceSet()
-                                                .getJavaDirectories())
-                            }
-                        }
-                        html(destdir: "$project.buildDir/jacocoreport/")
-                    }
-                    getLogger().lifecycle("Report saved at: $project.buildDir/jacocoreport/index.html")
-                }
-
-                project.task("${variantName}coverage").dependsOn pullingCoverageFile
+//                println variant.dexTask
+//                Dex dex = variant.dexTask
+//                dex.conventionMapping.inputFiles = {
+//                    def files = project.files(instrument.destinationDir) + project.files("$project.buildDir/jacocoagent/jacocoagent.jar")
+//                    files.files
+//                }
+//
+//                dex.dependsOn(instrument, extractAgent)
+//                instrument.mustRunAfter javaCompile
+//
+//                def inst = project.task("${variantName}instrument", type:Exec) {
+//                    com.android.build.gradle.BasePlugin plugin = project.plugins.findPlugin('android')
+//                    def pkg = variant.getTestVariant().getVariantData().getPackageName()
+//                    def runner = variant.getTestVariant().getVariantData().getVariantConfiguration().getInstrumentationRunner()
+//                    def asstring = pkg + '/' + runner
+//                    commandLine plugin.extension.adbExe, 'shell', 'am', 'instrument', '-e', 'coverage', 'true', '-w', asstring
+//                }
+//
+//                def pullingCoverageFile = project.task("${variantName}pullCoverage", type:Exec) {
+//                    def f = variant.getVariantData().getPackageName()
+//                    com.android.build.gradle.BasePlugin plugin = project.plugins.findPlugin('android')
+//                    commandLine plugin.extension.adbExe, 'pull', "/data/data/$f/files/coverage.ec","$project.buildDir/jacocoreport/coverage.ec"
+//                }
+//
+//                inst.dependsOn variant.getApkVariantData().installTask, variant.getTestVariant().getApkVariantData().installTask
+//                pullingCoverageFile.dependsOn inst
+//
+//                pullingCoverageFile.doLast {
+//                    ant.taskdef(name: "${variantName}jacocoReport", classname: 'org.jacoco.ant.ReportTask', classpath: project.configurations.jacoco.asPath)
+//                    ant.jacocoReport {
+//                        executiondata {
+//                            fileset(dir: "$project.buildDir/jacocoreport/", includes: '**/*.ec')
+//                        }
+//                        structure(name: variant.getVariantData().getName()) {
+//                            classfiles {
+//                                fileset(dir: javaCompile.destinationDir)
+//                            }
+//                            sourcefiles {
+//                                project.files(
+//                                        variant.getVariantData().getVariantConfiguration().getDefaultSourceSet()
+//                                                .getJavaDirectories())
+//                            }
+//                        }
+//                        html(destdir: "$project.buildDir/jacocoreport/")
+//                    }
+//                    getLogger().lifecycle("Report saved at: $project.buildDir/jacocoreport/index.html")
+//                }
+//
+//                project.task("${variantName}coverage").dependsOn pullingCoverageFile
             }
         }
     }

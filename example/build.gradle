@@ -32,7 +32,9 @@ dependencies {
 task check2 << {
     android.applicationVariants.each { variant ->
         if (variant.getTestVariant()) {
-//            println variant.getTestVariant().getConnectedInstrumentTest().runnerOption = new RunnerOption
+            println variant.getTestVariant().getConnectedInstrumentTest()
+
+
         }
     }
 }
