@@ -1,13 +1,12 @@
 repositories {
-    mavenCentral()
     maven {
-        url "https://oss.sonatype.org/content/repositories/snapshots"
+        url "/home/acsia/dev/android/source/out/host/gradle/repo/"
     }
 }
 
 rootProject.dependencies {
-    compile 'com.android.tools.build:gradle:0.9.+'
-    compile project(':jacoco')
     compile gradleApi()
     compile localGroovy()
+    compile 'com.android.tools.build:gradle:0.9.3-SNAPSHOT'
+    runtime project(':jacoco')
 }

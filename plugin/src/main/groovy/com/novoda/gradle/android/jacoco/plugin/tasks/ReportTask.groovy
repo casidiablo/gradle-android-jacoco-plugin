@@ -12,7 +12,10 @@ class ReportTask extends DefaultTask {
     def File destinationDir
 
 
-    FileCollection coverageFiles
+    FileCollection executionDataFiles
+    FileCollection sourceFiles
+    FileCollection classFiles
+
 
     String name
 
@@ -24,12 +27,8 @@ class ReportTask extends DefaultTask {
                 fileset(dir: '/home/acsia/dev/gradle/gradle-android-jacoco-plugin/', includes: '**/*.ec')
             }
             structure(name: name) {
-                classfiles {
-                    fileset(dir: '/home/acsia/dev/gradle/gradle-android-jacoco-plugin/example/build/classes/original-classes')
-                }
-                sourcefiles {
-                    fileset(dir: '/home/acsia/dev/gradle/gradle-android-jacoco-plugin/example/src/main/java')
-                }
+                classfiles { classFiles }
+                sourcefiles { sourceFiles }
             }
             html(destdir: '/tmp/report-Jacoco')
         }
