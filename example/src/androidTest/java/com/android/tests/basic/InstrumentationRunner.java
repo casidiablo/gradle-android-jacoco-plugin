@@ -8,15 +8,10 @@ public class InstrumentationRunner extends android.test.InstrumentationTestRunne
     @Override
     public void start() {
         super.start();
-//        AgentOptions o = new AgentOptions();
-//        o.setDestfile("/sdcard/jacoco");
-//        Log.i("TEST", "=-==> "+ Agent.getInstance(o).getData().getSessionId());
-
     }
 
     @Override
     public void onDestroy() {
-//        Log.i("TEST", "=-==> " + Agent.getInstance().getExecutionData(false));
         super.onDestroy();
     }
 }

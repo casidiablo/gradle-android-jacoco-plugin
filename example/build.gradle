@@ -10,18 +10,6 @@ apply plugin: 'android-jacoco'
 
 dependencies {
     androidTestCompile 'com.jayway.android.robotium:robotium-solo:4.3.1'
-    jacoco 'org.jacoco:org.jacoco.ant:0.6.6-SNAPSHOT'
-}
-
-task helloWorld(type: Exec) {
-    commandLine 'echo', 'helloworld'
-}
-
-task check2 << {
-
-    android.applicationVariants.each { variant ->
-        println variant.variantData.installTask
-    }
 }
 
 android {
@@ -30,20 +18,6 @@ android {
 
     defaultConfig {
         testInstrumentationRunner "com.android.tests.basic.InstrumentationRunner"
-        instrumentationOptions coverage: 'true', coverageFile "/ sdcard / myFile.ec"
-
-//        jacoco {
-//            version = '0.7.21-SNAPSHOT'
-//        }
-//
-//        testOptions {
-//            coverage true
-//            tests ['**/R.class', "**/BuildConfig.class", "android/**/*.class"]
-//            logOnly true
-//            coverageFile '/sdcard/test'
-//
-//            arguments ['-w', '-e hello', 'effesn']
-//        }
     }
 
     buildTypes {

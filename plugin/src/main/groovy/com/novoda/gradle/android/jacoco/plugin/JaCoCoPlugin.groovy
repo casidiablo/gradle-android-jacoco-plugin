@@ -1,8 +1,11 @@
 package com.novoda.gradle.android.jacoco.plugin
+
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
+import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.tasks.Dex
+import com.android.builder.VariantConfiguration
 import com.android.builder.testing.api.DeviceAction
 import com.android.builder.testing.api.DeviceConnector
 import com.novoda.gradle.android.jacoco.plugin.tasks.InstrumentTask
@@ -36,49 +39,44 @@ class JaCoCoPlugin implements Plugin<Project> {
             variants = project.android.libraryVariants
         }
 
-        println "-----------------------------> " + project.android.jacoco.version
-
-
         Configuration configuration = project.configurations.create("jacoco")
         project.dependencies {
             jacoco 'org.jacoco:org.jacoco.ant:' + project.android.jacoco.version
             jacoco 'org.jacoco:org.jacoco.agent:' + project.android.jacoco.version
         }
 
-        configuration.dependencies.whenObjectAdded {
-            println it.version
-            if (it.version != '0.7.1-SNAPSHOT' ) {println "got it!"}
-           // configuration.dependencies.remove(it)
-        }
-
-
         variants.all { variant ->
             if (variant.getTestVariant()) {
-                String variantName = variant.getVariantData().getVariantConfiguration().fullName.capitalize()
+
+                BaseVariantData variantData = variant.getVariantData()
+                VariantConfiguration variantConfiguration = variantData.getVariantConfiguration()
+                String variantName = variantConfiguration.fullName.capitalize()
+                Map<String, String> instrumentationOptions = variantConfiguration.getInstrumentationOptions()
+                variantConfiguration.instrumentationOptions.put("coverage", "true")
 
                 JavaCompile javaCompile = variant.javaCompile
-                InstrumentTask instrument =
-                        project.task("instrument${variantName}", type: InstrumentTask) {
-                            classDir = javaCompile.destinationDir
-                            destinationDir = project.file("${project.buildDir}/instrumented-classes/${variant.getVariantData().getVariantConfiguration().dirName}/")
-                        }
+
+                InstrumentTask instrument = project.task("instrument${variantName}", type: InstrumentTask)
+                instrument.classDir = javaCompile.destinationDir
+                instrument.destinationDir = project.file("${project.buildDir}/instrumented-classes/${variantConfiguration.dirName}/")
+
+                String deviceCoverageLocation = instrumentationOptions.coverageFile ?: "/data/data/${variantData.getPackageName()}/files/coverage.ec"
+
+                project.logger.info("Will fetch from : " + deviceCoverageLocation);
 
                 DeviceProviderInstrumentTestTask task = variant.getTestVariant().getConnectedInstrumentTest()
-                DeviceProviderInstrumentTestTask testCoverageTask =
-                        project.task("connectedAndroidTest${variantName}CoverageExcecution", type: DeviceProviderInstrumentTestTask) {
-
-                            plugin = task.plugin
-                    it.variant = task.variant
-                    testApp = task.testApp
-                    testedApp = task.testedApp
-                    reportsDir = task.reportsDir
-                    resultsDir = task.resultsDir
-                    flavorName = task.flavorName
-                    deviceProvider = task.deviceProvider
-                    scrubDevice +=  new DeviceAction() {
-                        void apply(DeviceConnector device) {
-                            device.pullFile('/data/data/com.android.tests.basic/files/coverage.ec', "$project.buildDir/jacocoreport/coverage.ec")
-                        }
+                DeviceProviderInstrumentTestTask testCoverageTask = project.task("connectedAndroidCoverageTest${variantName}", type: DeviceProviderInstrumentTestTask)
+                testCoverageTask.plugin = task.plugin
+                testCoverageTask.variant = task.variant
+                testCoverageTask.testApp = task.testApp
+                testCoverageTask.testedApp = task.testedApp
+                testCoverageTask.reportsDir = task.reportsDir
+                testCoverageTask.resultsDir = task.resultsDir
+                testCoverageTask.flavorName = task.flavorName
+                testCoverageTask.deviceProvider = task.deviceProvider
+                testCoverageTask.scrubDevice += new DeviceAction() {
+                    void apply(DeviceConnector device) {
+                        device.pullFile(deviceCoverageLocation, "$project.buildDir/jacocoreport/coverage.ec")
                     }
                 }
 
@@ -115,17 +113,15 @@ class JaCoCoPlugin implements Plugin<Project> {
                             }
                             sourcefiles {
                                 fileset(dir:
-                                project.files(
-                                        variant.getVariantData().getVariantConfiguration().getDefaultSourceSet()
-                                                .getJavaDirectories()).asPath   )
+                                        project.files(
+                                                variant.getVariantData().getVariantConfiguration().getDefaultSourceSet()
+                                                        .getJavaDirectories()).asPath)
                             }
                         }
                         html(destdir: "$project.buildDir/jacocoreport/")
                     }
                     getLogger().lifecycle("Report saved at: $project.buildDir/jacocoreport/index.html")
                 }
-
-                //project.task("connectedAndroidTest${variantName}Coverage").dependsOn testCoverageTask, pullingCoverageFile
             }
         }
     }
