@@ -1,2 +1,2 @@
 rootProject.name = 'gradle-android-jacoco-plugin-parent'
-include ':jacoco', ':example'
+include ':plugin', ':example'

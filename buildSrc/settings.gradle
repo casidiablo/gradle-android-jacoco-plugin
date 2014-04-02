@@ -1,2 +1,2 @@
-include ':jacoco'
-project(':jacoco').projectDir = new File('../plugin')
+include ':plugin'
+project(':plugin').projectDir = new File('../plugin')

@@ -1,12 +1,13 @@
 repositories {
     maven {
-        url "/home/acsia/dev/android/source/out/host/gradle/repo/"
+        url "http://repo.novoda.com/"
     }
+    mavenCentral()
 }
 
 rootProject.dependencies {
     compile gradleApi()
     compile localGroovy()
     compile 'com.android.tools.build:gradle:0.9.3-SNAPSHOT'
-    runtime project(':jacoco')
+    runtime project(':plugin')
 }

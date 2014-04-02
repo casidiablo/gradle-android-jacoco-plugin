@@ -1,7 +1,9 @@
 package com.novoda.gradle.android.jacoco.plugin.tasks
 
 import org.gradle.api.DefaultTask
-import org.gradle.api.tasks.TaskAction
+
+
+import org.gradle.api.tasks.*
 
 class InstrumentTask extends DefaultTask {
 

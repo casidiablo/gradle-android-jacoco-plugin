@@ -11,11 +11,9 @@ class ReportTask extends DefaultTask {
     // @OutputDirectory
     def File destinationDir
 
-
     FileCollection executionDataFiles
     FileCollection sourceFiles
     FileCollection classFiles
-
 
     String name
 
