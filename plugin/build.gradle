@@ -24,7 +24,26 @@ dependencies {
   compile 'com.android.tools.build:gradle:0.9.3-SNAPSHOT'
 }
 
+group = 'com.novoda'
+version = '0.0.1'
+
+ext.packaging = 'jar'
+
+def isDevBuild
+def isCiBuild
+def isReleaseBuild
+
+if (hasProperty("release")) {
+    isReleaseBuild = true
+} else if (hasProperty("ci")) {
+    isCiBuild = true
+    version += "-SNAPSHOT"
+} else {
+    isDevBuild = true
+}
+
 modifyPom {
+    artifactId = 'gradle-android-jacoco-plugin'
     project {
         name 'Android Gradle JaCoCo plugin'
         description 'Android Gradle plugin that code coverage against android instrumentation projects.'
