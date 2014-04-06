@@ -8,6 +8,7 @@ import com.android.builder.VariantConfiguration
 import com.android.builder.testing.api.DeviceAction
 import com.android.builder.testing.api.DeviceConnector
 import com.novoda.gradle.android.jacoco.plugin.tasks.InstrumentTask
+import com.novoda.gradle.android.jacoco.plugin.tasks.ReportTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.ProjectConfigurationException
@@ -66,7 +67,7 @@ class JaCoCoPlugin implements Plugin<Project> {
                 project.logger.info("Will fetch from : " + deviceCoverageLocation);
 
                 DeviceProviderInstrumentTestTask task = variant.getTestVariant().getConnectedInstrumentTest()
-                DeviceProviderInstrumentTestTask testCoverageTask = project.task("connectedAndroidCoverageTest${variantName}", type: DeviceProviderInstrumentTestTask)
+                DeviceProviderInstrumentTestTask testCoverageTask = project.task("generateConnectedAndroidCoverageTest${variantName}", type: DeviceProviderInstrumentTestTask)
                 testCoverageTask.plugin = task.plugin
                 testCoverageTask.variant = task.variant
                 testCoverageTask.testApp = task.testApp
@@ -82,7 +83,6 @@ class JaCoCoPlugin implements Plugin<Project> {
                 }
 
                 testCoverageTask.dependsOn task.taskDependencies
-                testCoverageTask.group = JavaBasePlugin.VERIFICATION_GROUP
                 testCoverageTask.description = "Add coverage to classes, installs and runs instrumentation tests"
 
                 def extractAgent = project.task("${variantName}extractJacocoAgent", type: Copy) {
@@ -101,29 +101,12 @@ class JaCoCoPlugin implements Plugin<Project> {
                 dex.dependsOn(instrument, extractAgent)
                 instrument.mustRunAfter javaCompile
 
-
-                testCoverageTask.doLast {
-                    ant.taskdef(name: "jacocoReport", classname: 'org.jacoco.ant.ReportTask', classpath: project.configurations.jacoco.asPath)
-                    ant.jacocoReport {
-                        executiondata {
-                            fileset(dir: "$project.buildDir/jacocoreport/", includes: '**/*.ec')
-                        }
-                        structure(name: variant.getVariantData().getName()) {
-                            classfiles {
-                                fileset(dir: javaCompile.destinationDir) {
-                                }
-                            }
-                            sourcefiles {
-                                fileset(dir:
-                                        project.files(
-                                                variant.getVariantData().getVariantConfiguration().getDefaultSourceSet()
-                                                        .getJavaDirectories()).asPath)
-                            }
-                        }
-                        html(destdir: "$project.buildDir/jacocoreport/")
-                    }
-                    getLogger().lifecycle("Report saved at: $project.buildDir/jacocoreport/index.html")
-                }
+                ReportTask reportTask = project.task("connectedAndroidCoverageTest${variantName}", type: ReportTask)
+                reportTask.project = project
+                reportTask.variant =  variant
+                reportTask.dependsOn testCoverageTask
+                reportTask.mustRunAfter testCoverageTask
+                reportTask.group = JavaBasePlugin.VERIFICATION_GROUP
             }
         }
     }
