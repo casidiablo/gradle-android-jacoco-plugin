@@ -16,10 +16,13 @@ class ReportTask extends DefaultTask {
     @TaskAction
     def report() {
         VariantConfiguration variantConfiguration = variant.getVariantData().getVariantConfiguration()
+        def sourcefilesPath = project.files(variantConfiguration.getDefaultSourceSet().getJavaDirectories()).asPath
+        String jacocoreportDirPerVariant = "$project.buildDir/jacocoreport/${variantConfiguration.dirName}/"
+
         ant.taskdef(name: "jacocoReport", classname: 'org.jacoco.ant.ReportTask', classpath: project.configurations.jacoco.asPath)
         ant.jacocoReport {
             executiondata {
-                fileset(dir: "$project.buildDir/jacocoreport/${variantConfiguration.dirName}/", includes: '**/*.ec')
+                fileset(dir: jacocoreportDirPerVariant, includes: '**/*.ec')
             }
             structure(name: variant.getVariantData().getName()) {
                 classfiles {
@@ -27,14 +30,11 @@ class ReportTask extends DefaultTask {
                     }
                 }
                 sourcefiles {
-                    fileset(dir:
-                            project.files(
-                                    variantConfiguration.getDefaultSourceSet()
-                                            .getJavaDirectories()).asPath)
+                    fileset(dir: sourcefilesPath)
                 }
             }
-            html(destdir: "$project.buildDir/jacocoreport/${variantConfiguration.dirName}/")
+            html(destdir: jacocoreportDirPerVariant)
         }
-        getLogger().lifecycle("Report saved at: $project.buildDir/jacocoreport/${variantConfiguration.dirName}/index.html")
+        getLogger().lifecycle("Report saved at: $jacocoreportDirPerVariant/index.html")
     }
 }

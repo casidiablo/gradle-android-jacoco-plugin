@@ -54,8 +54,9 @@ class JaCoCoPlugin implements Plugin<Project> {
                 String variantName = variantConfiguration.fullName.capitalize()
                 Map<String, String> instrumentationOptions = variantConfiguration.getInstrumentationOptions()
                 variantConfiguration.instrumentationOptions.put("coverage", "true")
+                String jacocoreportDirPerVariant = "$project.buildDir/jacocoreport/${variantConfiguration.dirName}"
 
-                createJacocoReportFolder(project, variantConfiguration)
+                createJacocoReportFolder(jacocoreportDirPerVariant)
 
                 JavaCompile javaCompile = variant.javaCompile
 
@@ -79,7 +80,7 @@ class JaCoCoPlugin implements Plugin<Project> {
                 testCoverageTask.deviceProvider = task.deviceProvider
                 testCoverageTask.scrubDevice += new DeviceAction() {
                     void apply(DeviceConnector device) {
-                        device.pullFile(deviceCoverageLocation, "$project.buildDir/jacocoreport/${variantConfiguration.dirName}/coverage.ec")
+                        device.pullFile(deviceCoverageLocation, "$jacocoreportDirPerVariant/coverage.ec")
                     }
                 }
 
@@ -113,8 +114,8 @@ class JaCoCoPlugin implements Plugin<Project> {
         }
     }
 
-    private static void createJacocoReportFolder(Project project, VariantConfiguration variantConfiguration) {
-        def jacocoReportFolder = new File("$project.buildDir/jacocoreport/${variantConfiguration.dirName}/")
+    private static void createJacocoReportFolder(String name) {
+        def jacocoReportFolder = new File("$name/")
         if (!jacocoReportFolder.exists()) {
             jacocoReportFolder.mkdirs()
         }
