@@ -1,5 +1,4 @@
 package com.novoda.gradle.android.jacoco.plugin
-
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
@@ -44,6 +43,8 @@ class JaCoCoPlugin implements Plugin<Project> {
             jacoco 'org.jacoco:org.jacoco.ant:' + project.android.jacoco.version
             jacoco 'org.jacoco:org.jacoco.agent:' + project.android.jacoco.version
         }
+
+        createJacocoReportFolder(project)
 
         variants.all { variant ->
             if (variant.getTestVariant()) {
@@ -100,6 +101,7 @@ class JaCoCoPlugin implements Plugin<Project> {
                 dex.dependsOn(instrument, extractAgent)
                 instrument.mustRunAfter javaCompile
 
+
                 testCoverageTask.doLast {
                     ant.taskdef(name: "jacocoReport", classname: 'org.jacoco.ant.ReportTask', classpath: project.configurations.jacoco.asPath)
                     ant.jacocoReport {
@@ -123,6 +125,13 @@ class JaCoCoPlugin implements Plugin<Project> {
                     getLogger().lifecycle("Report saved at: $project.buildDir/jacocoreport/index.html")
                 }
             }
+        }
+    }
+
+    private static void createJacocoReportFolder(Project project) {
+        def jacocoReportFolder = new File("$project.buildDir/jacocoreport/")
+        if (!jacocoReportFolder.exists()) {
+            jacocoReportFolder.mkdirs()
         }
     }
 }

@@ -12,3 +12,5 @@ repo
 build/
 
 *.iml
+
+local.properties
