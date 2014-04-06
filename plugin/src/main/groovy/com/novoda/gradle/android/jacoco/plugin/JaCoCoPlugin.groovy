@@ -1,4 +1,5 @@
 package com.novoda.gradle.android.jacoco.plugin
+
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
@@ -45,8 +46,6 @@ class JaCoCoPlugin implements Plugin<Project> {
             jacoco 'org.jacoco:org.jacoco.agent:' + project.android.jacoco.version
         }
 
-        createJacocoReportFolder(project)
-
         variants.all { variant ->
             if (variant.getTestVariant()) {
 
@@ -55,6 +54,8 @@ class JaCoCoPlugin implements Plugin<Project> {
                 String variantName = variantConfiguration.fullName.capitalize()
                 Map<String, String> instrumentationOptions = variantConfiguration.getInstrumentationOptions()
                 variantConfiguration.instrumentationOptions.put("coverage", "true")
+
+                createJacocoReportFolder(project, variantConfiguration)
 
                 JavaCompile javaCompile = variant.javaCompile
 
@@ -78,7 +79,7 @@ class JaCoCoPlugin implements Plugin<Project> {
                 testCoverageTask.deviceProvider = task.deviceProvider
                 testCoverageTask.scrubDevice += new DeviceAction() {
                     void apply(DeviceConnector device) {
-                        device.pullFile(deviceCoverageLocation, "$project.buildDir/jacocoreport/coverage.ec")
+                        device.pullFile(deviceCoverageLocation, "$project.buildDir/jacocoreport/${variantConfiguration.dirName}/coverage.ec")
                     }
                 }
 
@@ -101,18 +102,19 @@ class JaCoCoPlugin implements Plugin<Project> {
                 dex.dependsOn(instrument, extractAgent)
                 instrument.mustRunAfter javaCompile
 
+
                 ReportTask reportTask = project.task("connectedAndroidCoverageTest${variantName}", type: ReportTask)
-                reportTask.project = project
-                reportTask.variant =  variant
+                reportTask.variant = variant
                 reportTask.dependsOn testCoverageTask
                 reportTask.mustRunAfter testCoverageTask
                 reportTask.group = JavaBasePlugin.VERIFICATION_GROUP
+
             }
         }
     }
 
-    private static void createJacocoReportFolder(Project project) {
-        def jacocoReportFolder = new File("$project.buildDir/jacocoreport/")
+    private static void createJacocoReportFolder(Project project, VariantConfiguration variantConfiguration) {
+        def jacocoReportFolder = new File("$project.buildDir/jacocoreport/${variantConfiguration.dirName}/")
         if (!jacocoReportFolder.exists()) {
             jacocoReportFolder.mkdirs()
         }

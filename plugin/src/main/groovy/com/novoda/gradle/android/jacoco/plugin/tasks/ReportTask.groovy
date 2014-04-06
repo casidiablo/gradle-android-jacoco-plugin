@@ -1,4 +1,6 @@
 package com.novoda.gradle.android.jacoco.plugin.tasks
+
+import com.android.builder.VariantConfiguration
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
 
@@ -13,10 +15,11 @@ class ReportTask extends DefaultTask {
 
     @TaskAction
     def report() {
+        VariantConfiguration variantConfiguration = variant.getVariantData().getVariantConfiguration()
         ant.taskdef(name: "jacocoReport", classname: 'org.jacoco.ant.ReportTask', classpath: project.configurations.jacoco.asPath)
         ant.jacocoReport {
             executiondata {
-                fileset(dir: "$project.buildDir/jacocoreport/", includes: '**/*.ec')
+                fileset(dir: "$project.buildDir/jacocoreport/${variantConfiguration.dirName}/", includes: '**/*.ec')
             }
             structure(name: variant.getVariantData().getName()) {
                 classfiles {
@@ -26,12 +29,12 @@ class ReportTask extends DefaultTask {
                 sourcefiles {
                     fileset(dir:
                             project.files(
-                                    variant.getVariantData().getVariantConfiguration().getDefaultSourceSet()
+                                    variantConfiguration.getDefaultSourceSet()
                                             .getJavaDirectories()).asPath)
                 }
             }
-            html(destdir: "$project.buildDir/jacocoreport/")
+            html(destdir: "$project.buildDir/jacocoreport/${variantConfiguration.dirName}/")
         }
-        getLogger().lifecycle("Report saved at: $project.buildDir/jacocoreport/index.html")
+        getLogger().lifecycle("Report saved at: $project.buildDir/jacocoreport/${variantConfiguration.dirName}/index.html")
     }
 }
