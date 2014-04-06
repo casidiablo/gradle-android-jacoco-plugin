@@ -1,6 +1,5 @@
 package com.novoda.gradle.android.jacoco.plugin.tasks
 import org.gradle.api.DefaultTask
-import org.gradle.api.Project
 import org.gradle.api.tasks.TaskAction
 
 class ReportTask extends DefaultTask {
@@ -9,8 +8,7 @@ class ReportTask extends DefaultTask {
 
     // @OutputDirectory
     def File destinationDir
-
-    Project project
+    def String excluded = "**/BuildConfig.class, **/R.class, **/R*.class, **/Manifest*.class"
     def variant
 
     @TaskAction
@@ -22,7 +20,7 @@ class ReportTask extends DefaultTask {
             }
             structure(name: variant.getVariantData().getName()) {
                 classfiles {
-                    fileset(dir: variant.javaCompile.destinationDir) {
+                    fileset(dir: variant.javaCompile.destinationDir, excludes: excluded) {
                     }
                 }
                 sourcefiles {
