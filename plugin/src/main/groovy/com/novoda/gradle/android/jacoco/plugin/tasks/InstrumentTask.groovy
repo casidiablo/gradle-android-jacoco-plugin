@@ -15,16 +15,19 @@ class InstrumentTask extends DefaultTask {
     def File destinationDir
 
     //@Input
-    def String includes = "**/*.class"
+    def Set<String> included = ["**/*.class"]
 
     //@Input
-    def String excludes = "**/R.class, android/**/BuildConfig.class, android/**/*.class"
+    def Set<String> excluded = ["**/R.class", "android/**/BuildConfig.class", "android/**/*.class"]
 
     @TaskAction
     def instrument() {
+        String excludedString = excluded.join(",");
+        String includedString = included.join(",");
+
         ant.taskdef(name: 'instrument', classname: 'org.jacoco.ant.InstrumentTask', classpath: project.configurations.jacoco.asPath)
         ant.instrument(destdir: destinationDir) {
-            fileset(dir: classDir, includes: includes, excludes: excludes)
+            fileset(dir: classDir, includes: includedString, excludes: excludedString)
         }
     }
 }

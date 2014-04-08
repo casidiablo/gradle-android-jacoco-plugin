@@ -10,14 +10,15 @@ class ReportTask extends DefaultTask {
 
     // @OutputDirectory
     def File destinationDir
-    def String excluded = "**/BuildConfig.class, **/R.class, **/R*.class, **/Manifest*.class"
     def variant
+    def Set<String> excluded = ["**/BuildConfig.class", "**/R.class", "**/R*.class", "**/Manifest*.class"]
 
     @TaskAction
     def report() {
         VariantConfiguration variantConfiguration = variant.getVariantData().getVariantConfiguration()
         def sourcefilesPath = project.files(variantConfiguration.getDefaultSourceSet().getJavaDirectories()).asPath
         String jacocoreportDirPerVariant = "$project.buildDir/jacocoreport/${variantConfiguration.dirName}/"
+        String excludedString = excluded.join(",");
 
         ant.taskdef(name: "jacocoReport", classname: 'org.jacoco.ant.ReportTask', classpath: project.configurations.jacoco.asPath)
         ant.jacocoReport {
@@ -26,7 +27,7 @@ class ReportTask extends DefaultTask {
             }
             structure(name: variant.getVariantData().getName()) {
                 classfiles {
-                    fileset(dir: variant.javaCompile.destinationDir, excludes: excluded) {
+                    fileset(dir: variant.javaCompile.destinationDir, excludes: excludedString) {
                     }
                 }
                 sourcefiles {
