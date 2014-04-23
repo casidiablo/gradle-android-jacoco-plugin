@@ -3,9 +3,7 @@ package com.novoda.gradle.android.jacoco.plugin
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
-import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.tasks.Dex
-import com.android.builder.VariantConfiguration
 import com.android.builder.testing.api.DeviceAction
 import com.android.builder.testing.api.DeviceConnector
 import com.novoda.gradle.android.jacoco.plugin.tasks.InstrumentTask
@@ -49,12 +47,12 @@ class JaCoCoPlugin implements Plugin<Project> {
         variants.all { variant ->
             if (variant.getTestVariant()) {
 
-                BaseVariantData variantData = variant.getVariantData()
-                VariantConfiguration variantConfiguration = variantData.getVariantConfiguration()
-                String variantName = variantConfiguration.fullName.capitalize()
-                Map<String, String> instrumentationOptions = variantConfiguration.getInstrumentationOptions()
-                variantConfiguration.instrumentationOptions.put("coverage", "true")
-                String jacocoreportDirPerVariant = "$project.buildDir/jacocoreport/${variantConfiguration.dirName}"
+                String variantName = variant.getName().capitalize()
+                Map<String, String> instrumentationOptions = variant.getMergedFlavor().getInstrumentationOptions()
+                instrumentationOptions.put("coverage", "true")
+
+                def variantDirName = variant.getDirName();
+                String jacocoreportDirPerVariant = "$project.buildDir/jacocoreport/${variantDirName}"
 
                 createJacocoReportFolder(jacocoreportDirPerVariant)
 
@@ -62,9 +60,9 @@ class JaCoCoPlugin implements Plugin<Project> {
 
                 InstrumentTask instrument = project.task("instrument${variantName}", type: InstrumentTask)
                 instrument.classDir = javaCompile.destinationDir
-                instrument.destinationDir = project.file("${project.buildDir}/instrumented-classes/${variantConfiguration.dirName}/")
+                instrument.destinationDir = project.file("${project.buildDir}/instrumented-classes/${variantDirName}/")
 
-                String deviceCoverageLocation = instrumentationOptions.coverageFile ?: "/data/data/${variantData.getPackageName()}/files/coverage.ec"
+                String deviceCoverageLocation = instrumentationOptions.coverageFile ?: "/data/data/${variant.getPackageName()}/files/coverage.ec"
 
                 project.logger.info("Will fetch from : " + deviceCoverageLocation);
 

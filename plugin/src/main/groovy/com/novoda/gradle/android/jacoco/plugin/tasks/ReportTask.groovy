@@ -1,6 +1,6 @@
 package com.novoda.gradle.android.jacoco.plugin.tasks
 
-import com.android.builder.VariantConfiguration
+import com.android.builder.model.SourceProvider
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
 
@@ -15,9 +15,11 @@ class ReportTask extends DefaultTask {
 
     @TaskAction
     def report() {
-        VariantConfiguration variantConfiguration = variant.getVariantData().getVariantConfiguration()
-        def sourcefilesPath = project.files(variantConfiguration.getDefaultSourceSet().getJavaDirectories()).asPath
-        String jacocoreportDirPerVariant = "$project.buildDir/jacocoreport/${variantConfiguration.dirName}/"
+        List<SourceProvider> sourceSets = variant.getSourceSets();
+        SourceProvider defaultSourceProvider = sourceSets.get(0);
+        def sourcefilesPath = project.files(defaultSourceProvider.getJavaDirectories()).asPath
+        def variantDirName = variant.getDirName()
+        String jacocoreportDirPerVariant = "$project.buildDir/jacocoreport/${variantDirName}/"
         String excludedString = excluded.join(",");
 
         ant.taskdef(name: "jacocoReport", classname: 'org.jacoco.ant.ReportTask', classpath: project.configurations.jacoco.asPath)
