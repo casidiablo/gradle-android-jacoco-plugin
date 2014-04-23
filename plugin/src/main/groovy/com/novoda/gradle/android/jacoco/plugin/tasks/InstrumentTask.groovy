@@ -11,13 +11,13 @@ class InstrumentTask extends DefaultTask {
 
     def File classDir
 
-    // @OutputDirectory
+    @OutputDirectory
     def File destinationDir
 
-    //@Input
+    @Input
     def Set<String> included = ["**/*.class"]
 
-    //@Input
+    @Input
     def Set<String> excluded = ["**/R.class", "android/**/BuildConfig.class", "android/**/*.class"]
 
     @TaskAction

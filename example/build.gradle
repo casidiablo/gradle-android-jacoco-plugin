@@ -18,6 +18,7 @@ android {
 
     defaultConfig {
         testInstrumentationRunner "com.android.tests.basic.InstrumentationRunner"
+        instrumentationOptions += ['coverageFile': '/sdcard/coverage.ec']
     }
 
     buildTypes {

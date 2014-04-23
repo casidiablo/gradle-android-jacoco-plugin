@@ -104,6 +104,7 @@ class JaCoCoPlugin implements Plugin<Project> {
 
                 ReportTask reportTask = project.task("connectedAndroidCoverageTest${variantName}", type: ReportTask)
                 reportTask.variant = variant
+                reportTask.destinationDir = project.file("$project.buildDir/jacocoreport/${variant.getDirName()}/")
                 reportTask.dependsOn testCoverageTask
                 reportTask.mustRunAfter testCoverageTask
                 reportTask.group = JavaBasePlugin.VERIFICATION_GROUP
